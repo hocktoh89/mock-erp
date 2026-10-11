@@ -66,8 +66,8 @@ export class ErpService implements OnModuleDestroy {
           name TEXT NOT NULL,
           price REAL NOT NULL,
           currency TEXT NOT NULL,
-          stock_level INTEGER NOT NULL,
-          warehouse_location TEXT NOT NULL
+          stock_qty INTEGER NOT NULL,
+          availability INTEGER NOT NULL DEFAULT 1
         )
       `);
 
@@ -77,8 +77,8 @@ export class ErpService implements OnModuleDestroy {
           name,
           price,
           currency,
-          stock_level,
-          warehouse_location
+          stock_qty,
+          availability
         ) VALUES (?, ?, ?, ?, ?, ?)
       `);
 
@@ -103,8 +103,8 @@ export class ErpService implements OnModuleDestroy {
       name: row.name,
       price: Number(row.price),
       currency: row.currency,
-      stockQuantity: Number(row.stock_level),
-      availability: row.warehouse_location,
+      stockQuantity: Number(row.stock_qty),
+      availability: row.availability,
     };
   }
 
@@ -152,7 +152,7 @@ export class ErpService implements OnModuleDestroy {
     const service = this;
 
     return new Promise((resolve, reject) => {
-      db.run('UPDATE products SET stock_level = ? WHERE sku = ?', [stockQuantity, normalizedSku], function (error) {
+      db.run('UPDATE products SET stock_qty = ? WHERE sku = ?', [stockQuantity, normalizedSku], function (error) {
         if (error) {
           return reject(error);
         }
