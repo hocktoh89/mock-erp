@@ -12,6 +12,12 @@ export class ErpController {
     return this.erpService.getProduct(sku);
   }
 
+  @Get(':sku/qty/:qty')
+  async getProductQtyAvailability(@Param('sku') sku: string, @Param('qty') qty: number): Promise<ProductERP> {
+    return this.erpService.getProductAvailableQty(sku, qty);
+  }
+
+
   @Post('batch')
   async getBatchProducts(
     @Body() batchStockDto: BatchStockDto,

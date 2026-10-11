@@ -126,6 +126,34 @@ export class ErpService implements OnModuleDestroy {
     });
   }
 
+  async getProductAvailableQty(sku: string, stockQty: number): Promise<ProductERP> {
+    const normalizedSku = sku.toUpperCase().trim();
+    const requestedQty = Math.max(0, Number(stockQty) || 0);
+
+    return new Promise((resolve, reject) => {
+      this.db.get(
+        'SELECT * FROM products WHERE sku = ? AND ? <= stock_qty',
+        [normalizedSku, requestedQty],
+        (error, row: any) => {
+          if (error) {
+            return reject(error);
+          }
+
+          if (!row) {
+            const notFoundMessage =
+              requestedQty === 0
+                ? `Requested quantity is invalid for SKU '${sku}'.`
+                : `Requested quantity ${requestedQty} is not available for SKU '${sku}'.`;
+
+            return reject(new NotFoundException(notFoundMessage));
+          }
+
+          return resolve(this.mapRow(row));
+        },
+      );
+    });
+  }
+
   async getBatchProducts(skus: string[]): Promise<ProductERP[]> {
     const normalizedSkus = [...new Set(skus.map((sku) => sku.toUpperCase().trim()).filter(Boolean))];
 
