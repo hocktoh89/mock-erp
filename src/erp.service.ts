@@ -129,7 +129,7 @@ export class ErpService implements OnModuleDestroy {
   async getProductAvailableQty(sku: string, stockQty: number): Promise<ProductERP> {
     const normalizedSku = sku.toUpperCase().trim();
     const requestedQty = Math.max(0, Number(stockQty) || 0);
-
+    
     return new Promise((resolve, reject) => {
       this.db.get(
         'SELECT * FROM products WHERE sku = ? AND ? <= stock_qty',

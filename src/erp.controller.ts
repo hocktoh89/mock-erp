@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Patch, Param, Body } from '@nestjs/common';
+import { Controller, Get, Post, Patch, Param, Body, ParseIntPipe } from '@nestjs/common';
 import { ErpService, ProductERP } from './erp.service';
 import { BatchStockDto } from './dto/batch-stock.dto';
 import { UpdateStockDto } from './dto/update-stock.dto';
@@ -12,11 +12,13 @@ export class ErpController {
     return this.erpService.getProduct(sku);
   }
 
-  @Get(':sku/qty/:qty')
-  async getProductQtyAvailability(@Param('sku') sku: string, @Param('qty') qty: number): Promise<ProductERP> {
+  @Get('availability/:sku/qty/:qty')
+  async getProductQtyAvailability(
+    @Param('sku') sku: string,
+    @Param('qty', ParseIntPipe) qty: number,
+  ): Promise<ProductERP> {
     return this.erpService.getProductAvailableQty(sku, qty);
   }
-
 
   @Post('batch')
   async getBatchProducts(
