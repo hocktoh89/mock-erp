@@ -1,15 +1,17 @@
-import { 
-  Controller, 
-  Get, 
-  Post, 
-  Param, 
-  Body, 
-  Headers, 
-  HttpException, 
-  HttpStatus 
+import {
+  Controller,
+  Get,
+  Post,
+  Patch,
+  Param,
+  Body,
+  Headers,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import { ErpService, ProductERP } from './erp.service';
 import { BatchStockDto } from './dto/batch-stock.dto';
+import { UpdateStockDto } from './dto/update-stock.dto';
 
 @Controller('api/v1/products')
 export class ErpController {
@@ -48,7 +50,18 @@ export class ErpController {
     @Headers('x-simulate-error') simulateError?: string,
   ): Promise<{ products: ProductERP[] }> {
     await this.simulateFaults(simulateLatency, simulateError);
-    const products = this.erpService.getBatchProducts(batchStockDto.skus);
+    const products = await this.erpService.getBatchProducts(batchStockDto.skus);
     return { products };
+  }
+
+  @Patch(':sku/stock')
+  async updateProductStock(
+    @Param('sku') sku: string,
+    @Body() updateStockDto: UpdateStockDto,
+    @Headers('x-simulate-latency') simulateLatency?: string,
+    @Headers('x-simulate-error') simulateError?: string,
+  ): Promise<ProductERP> {
+    await this.simulateFaults(simulateLatency, simulateError);
+    return this.erpService.updateProductStock(sku, updateStockDto.stockQuantity);
   }
 }
