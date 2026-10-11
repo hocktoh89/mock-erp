@@ -176,31 +176,57 @@ export class ErpService implements OnModuleDestroy {
 
   async updateProductStock(sku: string, stockQuantity: number): Promise<ProductERP> {
     const normalizedSku = sku.toUpperCase().trim();
-    const normalizedStockQuantity = Math.max(0, Number(stockQuantity) || 0);
-    const availability = normalizedStockQuantity === 0 ? 0 : 1;
+    const deductionAmount = Math.max(0, Number(stockQuantity) || 0);
     const db = this.db;
     const service = this;
 
     return new Promise((resolve, reject) => {
-      db.run(
-        'UPDATE products SET stock_qty = ?, availability = ? WHERE sku = ?',
-        [normalizedStockQuantity, availability, normalizedSku],
-        function (error) {
+      db.get(
+        'SELECT stock_qty FROM products WHERE sku = ?',
+        [normalizedSku],
+        (error, row: any) => {
           if (error) {
             return reject(error);
           }
 
-          if (this.changes === 0) {
+          if (!row) {
             return reject(new NotFoundException(`Product with SKU '${sku}' not found in ERP.`));
           }
 
-          db.get('SELECT * FROM products WHERE sku = ?', [normalizedSku], (selectError, row: any) => {
-            if (selectError) {
-              return reject(selectError);
-            }
+          const currentStock = Number(row.stock_qty);
+          const updatedStock = currentStock - deductionAmount;
 
-            return resolve(service.mapRow(row));
-          });
+          if (deductionAmount > currentStock) {
+            return reject(
+              new NotFoundException(
+                `Requested deduction ${deductionAmount} exceeds available stock ${currentStock} for SKU '${sku}'.`,
+              ),
+            );
+          }
+
+          const availability = updatedStock === 0 ? 0 : 1;
+
+          db.run(
+            'UPDATE products SET stock_qty = ?, availability = ? WHERE sku = ?',
+            [updatedStock, availability, normalizedSku],
+            function (updateError) {
+              if (updateError) {
+                return reject(updateError);
+              }
+
+              if (this.changes === 0) {
+                return reject(new NotFoundException(`Product with SKU '${sku}' not found in ERP.`));
+              }
+
+              db.get('SELECT * FROM products WHERE sku = ?', [normalizedSku], (selectError, updatedRow: any) => {
+                if (selectError) {
+                  return reject(selectError);
+                }
+
+                return resolve(service.mapRow(updatedRow));
+              });
+            },
+          );
         },
       );
     });
